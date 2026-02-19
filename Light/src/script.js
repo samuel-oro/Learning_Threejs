@@ -27,6 +27,8 @@ gui.add(spotLight, 'intensity').min(0).max(5).step(0.001).name('Spot Intensity')
 gui.addColor(spotLight, 'color').name('Spot Color')
 scene.add(spotLight)
 scene.add(spotLight.target)
+const spotLightHelper = new THREE.SpotLightHelper(spotLight)
+scene.add(spotLightHelper)
 
 spotLight.castShadow = true
 spotLight.shadow.mapSize.set(1024, 1024)
@@ -163,6 +165,7 @@ const tick = () =>
 
     // Update controls
     controls.update()
+    spotLightHelper.update() 
 
     // Render
     renderer.render(scene, camera)
