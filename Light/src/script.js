@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import { add } from 'three/tsl'
 
 /**
  * Base
@@ -20,13 +19,20 @@ const scene = new THREE.Scene()
  */
 const ambientlight = new THREE.AmbientLight('blue', 0.5)
 scene.add(ambientlight)
+gui.addColor(ambientlight, 'color').name('Ambient Color')
 
-// const spotLight = new THREE.SpotLight(0x78ff00, 0.5, 6, Math.PI * 0.1,0.25, 1)
-// spotLight.position.x = 0.7
-// scene.add(spotLight)
+const spotLight = new THREE.SpotLight(0x78ff00, 0.5, 6, Math.PI * 0.1,0.25, 1)
+spotLight.position.x = 0.9
+gui.add(spotLight, 'intensity').min(0).max(5).step(0.001).name('Spot Intensity')
+gui.addColor(spotLight, 'color').name('Spot Color')
+scene.add(spotLight)
 
-const DirectionLight = new THREE.DirectionalLight('red', 2)
-scene.add(DirectionLight)
+const directionalLight = new THREE.DirectionalLight('red', 2)
+directionalLight.position.set(1, 1, 0)
+gui.add(directionalLight, 'intensity').min(0).max(5).step(0.001).name('Direct Intensity')
+gui.addColor(directionalLight, 'color').name('Direct Color')
+scene.add(directionalLight)
+
 
 /**
  * Objects
