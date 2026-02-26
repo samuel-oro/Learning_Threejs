@@ -109,19 +109,32 @@ doorColorTexture.colorSpace = THREE.SRGBColorSpace
  */
 const particlesCount = 700
 const particlesPositions = new Float32Array(particlesCount * 3)
+const particlesColors = new Float32Array(particlesCount * 3)
 const particlesBasePositions = new Float32Array(particlesCount * 3)
 const particlesMoveAmplitude = new Float32Array(particlesCount)
 const particlesMoveSpeed = new Float32Array(particlesCount)
 const particlesMovePhase = new Float32Array(particlesCount)
-const particlesSpread = 16
-const particlesHeight = 6
+const particlesRadius = 10
+const particlesYOffset = 0
+const particlesHeightScale = 0.85
+const particleColor = new THREE.Color()
 
 for(let i = 0; i < particlesCount; i++)
 {
     const i3 = i * 3
-    particlesPositions[i3] = (Math.random() - 0.5) * particlesSpread
-    particlesPositions[i3 + 1] = Math.random() * particlesHeight
-    particlesPositions[i3 + 2] = (Math.random() - 0.5) * particlesSpread
+
+    // Random point inside a hemisphere (dome)
+    const theta = Math.random() * Math.PI * 2
+    const phi = Math.random() * Math.PI * 0.5
+    const radius = particlesRadius * Math.cbrt(Math.random())
+
+    particlesPositions[i3] = radius * Math.sin(phi) * Math.cos(theta)
+    particlesPositions[i3 + 1] = particlesYOffset + radius * Math.cos(phi) * particlesHeightScale
+    particlesPositions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta)
+    particleColor.setHSL(Math.random(), 0.85, 0.58)
+    particlesColors[i3] = particleColor.r
+    particlesColors[i3 + 1] = particleColor.g
+    particlesColors[i3 + 2] = particleColor.b
     particlesBasePositions[i3] = particlesPositions[i3]
     particlesBasePositions[i3 + 1] = particlesPositions[i3 + 1]
     particlesBasePositions[i3 + 2] = particlesPositions[i3 + 2]
@@ -132,31 +145,37 @@ for(let i = 0; i < particlesCount; i++)
 
 const particlesGeometry = new THREE.BufferGeometry()
 particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlesPositions, 3))
+particlesGeometry.setAttribute('color', new THREE.BufferAttribute(particlesColors, 3))
 
 const particleCanvas = document.createElement('canvas')
 particleCanvas.width = 64
 particleCanvas.height = 64
 const particleContext = particleCanvas.getContext('2d')
 const particleGradient = particleContext.createRadialGradient(32, 32, 0, 32, 32, 32)
-particleGradient.addColorStop(0, 'rgba(255, 255, 255, 1)')
-particleGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)')
+particleGradient.addColorStop(0, 'rgba(255, 255, 255, 0.85)')
+particleGradient.addColorStop(0.35, 'rgba(255, 255, 255, 0.5)')
+particleGradient.addColorStop(0.7, 'rgba(255, 245, 180, 0.25)')
 particleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
 particleContext.fillStyle = particleGradient
 particleContext.fillRect(0, 0, 64, 64)
 const particleTexture = new THREE.CanvasTexture(particleCanvas)
 
 const particlesMaterial = new THREE.PointsMaterial()
-particlesMaterial.size = 0.015
+particlesMaterial.size = 0.023
 particlesMaterial.sizeAttenuation = true
-particlesMaterial.color = new THREE.Color('rgb(255, 254, 207)')
+particlesMaterial.color = new THREE.Color(1, 1, 1)
+particlesMaterial.vertexColors = true
 particlesMaterial.transparent = true
+particlesMaterial.opacity = 0.75
 particlesMaterial.alphaMap = particleTexture
 particlesMaterial.depthWrite = false
 particlesMaterial.blending = THREE.AdditiveBlending
-
+particlesMaterial.toneMapped = true
 
 const particles = new THREE.Points(particlesGeometry, particlesMaterial)
 scene.add(particles)
+const particlePositionAttribute = particlesGeometry.getAttribute('position')
+const particlePositionsArray = particlePositionAttribute.array
 
 /**
  * House
@@ -449,18 +468,17 @@ const tick = () =>
     const elapsedTime = timer.getElapsed()
 
     // Particles
-    const particlePositions = particlesGeometry.attributes.position.array
     for(let i = 0; i < particlesCount; i++)
     {
         const i3 = i * 3
         const t = elapsedTime * particlesMoveSpeed[i] + particlesMovePhase[i]
         const amplitude = particlesMoveAmplitude[i]
 
-        particlePositions[i3] = particlesBasePositions[i3] + Math.sin(t) * amplitude
-        particlePositions[i3 + 1] = particlesBasePositions[i3 + 1] + Math.sin(t * 1.2) * amplitude
-        particlePositions[i3 + 2] = particlesBasePositions[i3 + 2] + Math.cos(t * 0.9) * amplitude
+        particlePositionsArray[i3] = particlesBasePositions[i3] + Math.sin(t) * amplitude
+        particlePositionsArray[i3 + 1] = particlesBasePositions[i3 + 1] + Math.sin(t * 1.2) * amplitude
+        particlePositionsArray[i3 + 2] = particlesBasePositions[i3 + 2] + Math.cos(t * 0.9) * amplitude
     }
-    particlesGeometry.attributes.position.needsUpdate = true
+    particlePositionAttribute.needsUpdate = true
 
     // Ghosts
     const ghost1Angle = elapsedTime * 0.5
