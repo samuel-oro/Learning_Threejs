@@ -15,13 +15,86 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
- * Test cube
+ * Galaxy
  */
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial()
-)
-scene.add(cube)
+
+const parameters = {}
+parameters.count = 1000
+parameters.sizes = 0.02
+parameters.radius = 5
+parameters.branches = 3
+parameters.spin = 1
+parameters.randomness = 0.2
+
+let geometry = null
+let material = null
+let points = null
+
+const generateGalaxy = () =>
+{
+
+    if(points !== null)
+    {
+        geometry.dispose()
+        material.dispose()
+        scene.remove(points)
+    }
+    /**
+     * Geometry
+     */
+     geometry = new THREE.BufferGeometry()
+
+    const positions = new Float32Array(parameters.count * 3)
+
+    for(let i=0; i < parameters.count; i++)
+    {
+        const i3 = i * 3
+
+        const radius = Math.random() * parameters.radius
+        const spinangle = radius * parameters.spin
+        const branchangle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+
+        if(i < 20)
+        {
+            console.log(i ,branchangle)
+        }
+
+        positions[i3 + 0 ] = Math.cos(branchangle + spinangle) * radius
+        positions[i3 + 1 ] = 0
+        positions[i3 + 2 ] = Math.sin(branchangle + spinangle) * radius
+    }
+
+    console.log(positions)
+    geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(positions, 3)
+    )
+
+    /**
+     * Material
+     */
+     material = new THREE.PointsMaterial({
+        size: parameters.sizes,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    })
+
+    /**
+     * Points
+     */
+    points = new THREE.Points(geometry, material)
+    scene.add(points)
+}
+
+generateGalaxy()
+
+gui.add(parameters, 'count' ).min(100).max(1000000).step(100).onFinishChange(generateGalaxy)
+gui.add(parameters, 'sizes' ).min(0.001).max(0.1).step(0.001).onFinishChange(generateGalaxy)
+gui.add(parameters, 'radius').min(0.1).max(20).step(0.1).onFinishChange(generateGalaxy)
+gui.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generateGalaxy)
+gui.add(parameters, 'spin').min(-5).max(5).step(0.001).onFinishChange(generateGalaxy)
+gui.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(generateGalaxy)
 
 /**
  * Sizes
