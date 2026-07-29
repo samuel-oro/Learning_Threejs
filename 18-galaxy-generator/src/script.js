@@ -25,6 +25,9 @@ parameters.radius = 5
 parameters.branches = 3
 parameters.spin = 1
 parameters.randomness = 0.2
+parameters.randomnessPower = 3
+parameters.insideColor = '#ff6030'
+parameters.outsideColor = '#1b3984'
 
 let geometry = null
 let material = null
@@ -45,6 +48,10 @@ const generateGalaxy = () =>
      geometry = new THREE.BufferGeometry()
 
     const positions = new Float32Array(parameters.count * 3)
+    const colors = new Float32Array(parameters.count * 3)
+
+    const insideColor = new THREE.Color(parameters.insideColor)
+    const outsideColor = new THREE.Color(parameters.outsideColor)
 
     for(let i=0; i < parameters.count; i++)
     {
@@ -54,20 +61,30 @@ const generateGalaxy = () =>
         const spinangle = radius * parameters.spin
         const branchangle = (i % parameters.branches) / parameters.branches * Math.PI * 2
 
-        if(i < 20)
-        {
-            console.log(i ,branchangle)
-        }
+        const randomX = Math.pow(Math.random(),  parameters.randomnessPower) * (Math.random() < 0.5 ? 1: -1 )
+        const randomY = Math.pow(Math.random(),  parameters.randomnessPower) * (Math.random() < 0.5 ? 1: -1 )
+        const randomZ = Math.pow(Math.random(),  parameters.randomnessPower) * (Math.random() < 0.5 ? 1: -1 )
 
-        positions[i3 + 0 ] = Math.cos(branchangle + spinangle) * radius
-        positions[i3 + 1 ] = 0
-        positions[i3 + 2 ] = Math.sin(branchangle + spinangle) * radius
+        positions[i3 + 0 ] = Math.cos(branchangle + spinangle) * radius + randomX
+        positions[i3 + 1 ] = randomY
+        positions[i3 + 2 ] = Math.sin(branchangle + spinangle) * radius + randomZ
+
+        const mixedColor = insideColor.clone()
+        mixedColor.lerp(outsideColor, radius / parameters.radius)
+
+        colors[i3 + 0] = mixedColor.r
+        colors[i3 + 1] = mixedColor.g
+        colors[i3 + 2] = mixedColor.b
     }
 
-    console.log(positions)
     geometry.setAttribute(
         'position',
         new THREE.BufferAttribute(positions, 3)
+    )
+
+    geometry.setAttribute(
+        'color',
+        new THREE.BufferAttribute(colors, 3)
     )
 
     /**
@@ -77,7 +94,8 @@ const generateGalaxy = () =>
         size: parameters.sizes,
         sizeAttenuation: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: THREE.AdditiveBlending,
+        vertexColors: true
     })
 
     /**
@@ -95,7 +113,9 @@ gui.add(parameters, 'radius').min(0.1).max(20).step(0.1).onFinishChange(generate
 gui.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generateGalaxy)
 gui.add(parameters, 'spin').min(-5).max(5).step(0.001).onFinishChange(generateGalaxy)
 gui.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(generateGalaxy)
-
+gui.add(parameters, 'randomnessPower').min(1).max(10).step(0.001).onFinishChange(generateGalaxy)
+gui.addColor(parameters, 'insideColor').onFinishChange(generateGalaxy)
+gui.addColor(parameters, 'outsideColor').onFinishChange(generateGalaxy)
 /**
  * Sizes
  */
