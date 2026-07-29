@@ -28,10 +28,14 @@ parameters.randomness = 0.2
 parameters.randomnessPower = 3
 parameters.insideColor = '#ff6030'
 parameters.outsideColor = '#1b3984'
+parameters.animationSpeed = 0.4
+parameters.animationAmplitude = 0.08
 
 let geometry = null
 let material = null
 let points = null
+let basePositions = null
+let animationPhases = null
 
 const generateGalaxy = () =>
 {
@@ -49,6 +53,8 @@ const generateGalaxy = () =>
 
     const positions = new Float32Array(parameters.count * 3)
     const colors = new Float32Array(parameters.count * 3)
+    basePositions = new Float32Array(parameters.count * 3)
+    animationPhases = new Float32Array(parameters.count)
 
     const insideColor = new THREE.Color(parameters.insideColor)
     const outsideColor = new THREE.Color(parameters.outsideColor)
@@ -68,6 +74,11 @@ const generateGalaxy = () =>
         positions[i3 + 0 ] = Math.cos(branchangle + spinangle) * radius + randomX
         positions[i3 + 1 ] = randomY
         positions[i3 + 2 ] = Math.sin(branchangle + spinangle) * radius + randomZ
+
+        basePositions[i3 + 0] = positions[i3 + 0]
+        basePositions[i3 + 1] = positions[i3 + 1]
+        basePositions[i3 + 2] = positions[i3 + 2]
+        animationPhases[i] = Math.random() * Math.PI * 2
 
         const mixedColor = insideColor.clone()
         mixedColor.lerp(outsideColor, radius / parameters.radius)
@@ -116,6 +127,9 @@ gui.add(parameters, 'randomness').min(0).max(2).step(0.001).onFinishChange(gener
 gui.add(parameters, 'randomnessPower').min(1).max(10).step(0.001).onFinishChange(generateGalaxy)
 gui.addColor(parameters, 'insideColor').onFinishChange(generateGalaxy)
 gui.addColor(parameters, 'outsideColor').onFinishChange(generateGalaxy)
+gui.add(parameters, 'animationSpeed').min(0).max(3).step(0.001)
+gui.add(parameters, 'animationAmplitude').min(0).max(0.5).step(0.001)
+gui.close()
 /**
  * Sizes
  */
@@ -171,6 +185,25 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+
+    if(points !== null)
+    {
+        const positions = geometry.attributes.position.array
+
+        for(let i = 0; i < parameters.count; i++)
+        {
+            const i3 = i * 3
+            const phase = animationPhases[i]
+            const wave = Math.sin(elapsedTime * parameters.animationSpeed + phase) * parameters.animationAmplitude
+
+            positions[i3 + 0] = basePositions[i3 + 0] + Math.cos(phase) * wave
+            positions[i3 + 1] = basePositions[i3 + 1] + wave
+            positions[i3 + 2] = basePositions[i3 + 2] + Math.sin(phase) * wave
+        }
+
+        geometry.attributes.position.needsUpdate = true
+        points.rotation.y = elapsedTime * parameters.animationSpeed * 0.08
+    }
 
     // Update controls
     controls.update()
